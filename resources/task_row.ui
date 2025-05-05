@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+	<template class="GtkRsTestTaskRow" parent="AdwActionRow">
+		<child type="prefix">
+			<object class="GtkCheckButton" id="check_button"></object>
+		</child>
+		<property name="use-markup">true</property>
+
+		<!-- avoid the "gtk_list_box_row_grab_focus: assertion 'box != NULL' failed" error -->
+		<property name="can-focus">false</property>
+
+	</template>
+</interface>

@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+	<menu id="headerbar-menu">
+		<submenu>
+			<attribute name="label" translatable="yes">Filter</attribute>
+			<item>
+				<attribute name="label" translatable="yes">All</attribute>
+				<attribute name="action">win.filter-mode</attribute>
+				<attribute name="target">all</attribute>
+			</item>
+			<item>
+				<attribute name="label" translatable="yes">Unresolved</attribute>
+				<attribute name="action">win.filter-mode</attribute>
+				<attribute name="target">unresolved</attribute>
+			</item>
+			<item>
+				<attribute name="label" translatable="yes">Done</attribute>
+				<attribute name="action">win.filter-mode</attribute>
+				<attribute name="target">done</attribute>
+			</item>
+		</submenu>
+		<item>
+			<attribute name="label" translatable="yes">Remove Done Tasks</attribute>
+			<attribute name="action">win.remove-done-tasks</attribute>
+		</item>
+		<section>
+			<item>
+				<attribute name="label" translatable="yes">Adaptive Preview</attribute>
+				<attribute name="action">win.adaptive-preview</attribute>
+			</item>
+			<item>
+				<attribute name="label" translatable="yes">About</attribute>
+				<attribute name="action">win.about</attribute>
+			</item>
+		</section>
+	</menu>
+	<template class="GtkRsTestMainWindow" parent="AdwApplicationWindow">
+		<property name="title">To-Do List</property>
+		<property name="filter-mode">all</property>
+		<child>
+			<object class="AdwBreakpoint">
+				<condition>max-width: 500sp</condition>
+				<setter object="split_view" property="collapsed">True</setter>
+			</object>
+		</child>
+		<property name="content">
+			<object class="GtkStack" id="stack">
+				<property name="transition-type">crossfade</property>
+				<child>
+					<object class="GtkStackPage">
+						<property name="name">placeholder</property>
+						<property name="child">
+							<object class="AdwToolbarView">
+								<child type="top">
+									<object class="AdwHeaderBar"/>
+								</child>
+								<property name="content">
+									<object class="AdwStatusPage">
+										<property name="icon-name">check-round-outline2-symbolic</property>
+										<property name="title">No Tasks</property>
+										<property name="description">Create some tasks now!</property>
+										<child>
+											<object class="GtkButton">
+												<property name="label">New Collection</property>
+												<property name="use-underline">True</property>
+												<property name="halign">center</property>
+												<signal name="clicked" handler="handle_new_collection_button_clicked" swapped="true"/>
+												<style>
+													<class name="pill" />
+													<class name="suggested-action" />
+												</style>
+											</object>
+										</child>
+									</object>
+								</property>
+							</object>
+						</property>
+					</object>
+				</child>
+				<child>
+					<object class="GtkStackPage">
+						<property name="name">main</property>
+						<property name="child">
+							<object class="AdwNavigationSplitView" id="split_view">
+								<property name="sidebar">
+									<object class="AdwNavigationPage">
+										<property name="title" bind-source="GtkRsTestMainWindow" bind-property="title" bind-flags="sync-create"/>
+										<child>
+											<object class="AdwToolbarView">
+												<child type="top">
+													<object class="AdwHeaderBar">
+														<child type="start">
+															<object class="GtkButton">
+																<property name="icon-name">list-add-symbolic</property>
+																<property name="tooltip-text">New Collection</property>
+																<signal name="clicked" handler="handle_new_collection_button_clicked" swapped="true"/>
+															</object>
+														</child>
+													</object>
+												</child>
+												<property name="content">
+													<object class="GtkScrolledWindow">
+														<child>
+															<object class="GtkListBox" id="collection_list_box">
+																<property name="selection-mode">single</property>
+																<property name="activate-on-single-click">false</property>
+																<style>
+																	<class name="boxed-list"/>
+																</style>
+																<signal name="row-selected" handler="handle_collection_row_selected" swapped="true"/>
+																<signal name="row-activated" handler="handle_collection_row_activated" swapped="true"/>
+															</object>
+														</child>
+													</object>
+												</property>
+											</object>
+										</child>
+									</object>
+								</property>
+								<property name="content">
+									<object class="AdwNavigationPage">
+										<property name="title">Tasks</property>
+										<child>
+											<object class="AdwToolbarView">
+												<child type="top">
+													<object class="AdwHeaderBar">
+														<property name="show_back_button">true</property>
+														<child type="end">
+															<object class="GtkMenuButton">
+																<property name="icon-name">open-menu-symbolic</property>
+																<property name="menu-model">headerbar-menu</property>
+															</object>
+														</child>
+													</object>
+												</child>
+												<property name="content">
+													<object class="AdwToastOverlay" id="toast">
+														<child>
+															<object class="GtkBox">
+																<property name="orientation">vertical</property>
+																<property name="margin-top">8</property>
+																<property name="margin-bottom">8</property>
+																<property name="margin-start">8</property>
+																<property name="margin-end">8</property>
+																<property name="spacing">8</property>
+																<child>
+																	<object class="AdwBanner" id="banner">
+																		<property name="button-label">Disable</property>
+																		<signal name="button-clicked" handler="handle_banner_button_clicked" swapped="true"/>
+																	</object>
+																</child>
+																<child>
+																	<object class="GtkEntry" id="task_entry">
+																		<property name="secondary_icon_name">list-add-symbolic</property>
+																		<property name="placeholder_text">Enter your task names...</property>
+																		<signal name="icon-release" handler="handle_task_add_clicked" swapped="true"/>
+																		<signal name="activate" handler="handle_task_entry_activated" swapped="true"/>
+																	</object>
+																</child>
+																<child>
+																	<object class="GtkScrolledWindow">
+																		<property name="has-frame">true</property>
+																		<property name="propagate-natural-height">true</property>
+																		<child>
+																			<object class="GtkListView">
+																				<property name="factory">
+																					<object class="GtkSignalListItemFactory">
+																						<signal name="setup" handler="handle_task_list_factory_setup" swapped="true"/>
+																						<signal name="bind" handler="handle_task_list_factory_bind" swapped="true"/>
+																						<signal name="unbind" handler="handle_task_list_factory_unbind" swapped="true"/>
+																					</object>
+																				</property>
+																				<property name="model">
+																					<object class="GtkNoSelection" id="task_model"></object>
+																				</property>
+																			</object>
+																		</child>
+																	</object>
+																</child>
+															</object>
+														</child>
+													</object>
+												</property>
+											</object>
+										</child>
+									</object>
+								</property>
+							</object>
+						</property>
+					</object>
+				</child>
+			</object>
+		</property>
+	</template>
+</interface>

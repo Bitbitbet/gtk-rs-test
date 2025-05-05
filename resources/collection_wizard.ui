@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+	<template class="GtkRsTestCollectionWizard" parent="AdwDialog">
+		<property name="title" translatable="yes">New Collection</property>
+		<property name="focus-widget">entry</property>
+		<child>
+			<object class="AdwToolbarView">
+				<child type="top">
+					<object class="AdwHeaderBar">
+						<property name="show-end-title-buttons">false</property>
+						<child type="start">
+							<object class="GtkButton">
+								<property name="label">Cancel</property>
+								<signal name="clicked" handler="handle_cancel_button_clicked" swapped="true" />
+								<style>
+									<class name="destructive-action"/>
+								</style>
+							</object>
+						</child>
+						<child type="end">
+							<object class="GtkButton" id="create_button">
+								<property name="label">Create</property>
+								<signal name="clicked" handler="handle_create_button_clicked" swapped="true" />
+								<style>
+									<class name="suggested-action"/>
+								</style>
+							</object>
+						</child>
+					</object>
+				</child>
+				<property name="content">
+					<object class="GtkEntry" id="entry">
+						<property name="margin-top">8</property>
+						<property name="margin-bottom">8</property>
+						<property name="margin-start">8</property>
+						<property name="margin-end">8</property>
+						<property name="placeholder-text">Name of the collection...</property>
+						<signal name="activate" handler="handle_entry_activated" swapped="true" />
+					</object>
+				</property>
+			</object>
+		</child>
+	</template>
+</interface>
