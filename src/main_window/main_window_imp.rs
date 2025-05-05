@@ -309,7 +309,7 @@ impl ObjectImpl for MainWindowImp {
             let window = self.downgrade();
             self.selected_collection
                 .borrow_mut()
-                .connect_notify(move |collection_object| {
+                .watch(move |collection_object| {
                     let window = window.upgrade().unwrap();
                     let collection_object = if let Some(c) = collection_object {
                         c.upgrade().unwrap()

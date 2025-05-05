@@ -51,7 +51,7 @@ impl<'w, T> Watcher<'w, T> {
         }
     }
 
-    pub fn connect_notify(&mut self, f: impl Fn(&T) + 'w) {
+    pub fn watch(&mut self, f: impl Fn(&T) + 'w) {
         self.callbacks.push(Box::new(f));
     }
 
