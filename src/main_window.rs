@@ -6,6 +6,8 @@ use gtk::{Widget, Window, glib};
 
 use gtk::gio::{self, ActionEntry};
 
+use crate::task_object;
+
 glib::wrapper! {
     pub struct MainWindow(ObjectSubclass<main_window_imp::MainWindowImp>)
         @extends adw::ApplicationWindow, gtk::ApplicationWindow, Window, Widget,
@@ -37,6 +39,13 @@ impl MainWindow {
                     let title = param.and_then(|v| v.get::<String>()).unwrap();
 
                     window.imp().add_collection(&title);
+                })
+                .build(),
+            ActionEntry::builder("remove-task")
+                .parameter_type(Some(&task_object::IdType::static_variant_type()))
+                .activate(|window: &Self, _, id| {
+                    let id = id.and_then(|t| t.get::<task_object::IdType>()).unwrap();
+                    window.imp().remove_task_by_id(id);
                 })
                 .build(),
         ]);

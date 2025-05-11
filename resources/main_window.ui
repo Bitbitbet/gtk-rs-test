@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-	<menu id="headerbar-menu">
+	<!-- Menu of the setting menu on the headerbar -->
+	<menu id="headerbar_menu">
 		<submenu>
 			<attribute name="label" translatable="yes">Filter</attribute>
 			<item>
@@ -128,7 +129,7 @@
 														<child type="end">
 															<object class="GtkMenuButton">
 																<property name="icon-name">open-menu-symbolic</property>
-																<property name="menu-model">headerbar-menu</property>
+																<property name="menu-model">headerbar_menu</property>
 															</object>
 														</child>
 													</object>

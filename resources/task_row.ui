@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
+	<!-- Menu of the right-click popup for taskrow -->
+	<menu id="rightclick_menu_model" />
+
 	<template class="GtkRsTestTaskRow" parent="AdwActionRow">
+		<object class="GtkPopoverMenu" id="rightclick_menu">
+			<property name="menu_model">rightclick_menu_model</property>
+			<property name="has_arrow">false</property>
+			<property name="position">bottom</property>
+			<property name="halign">start</property>
+		</object>
+
 		<child type="prefix">
 			<object class="GtkCheckButton" id="check_button"></object>
 		</child>

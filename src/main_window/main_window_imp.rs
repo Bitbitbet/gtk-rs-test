@@ -19,7 +19,10 @@ use adw::{
 use adw::subclass::prelude::*;
 use gtk_rs_test::watcher::Watcher;
 
-use crate::{collection_object::CollectionObject, task_object::TaskObject};
+use crate::{
+    collection_object::CollectionObject,
+    task_object::{self, TaskObject},
+};
 
 use super::{collection_wizard::CollectionWizard, task_row::TaskRow};
 
@@ -114,11 +117,7 @@ impl MainWindowImp {
         self.show_add_new_collection_dialog();
     }
     #[template_callback]
-    fn handle_collection_row_selected(
-        &self,
-        list_box_row: Option<&ListBoxRow>,
-        _list_box: &ListBox,
-    ) {
+    fn handle_collection_row_selected(&self, list_box_row: Option<&ListBoxRow>) {
         *self.selected_collection.borrow_mut().borrow_mut() = list_box_row.map(|list_box_row| {
             ObjectExt::downgrade(
                 &self
@@ -192,6 +191,32 @@ impl MainWindowImp {
             .developers([":)"])
             .build()
             .present(Some(&*self.obj()));
+    }
+    pub(super) fn remove_task_by_id(&self, id: task_object::IdType) {
+        let tasks = match **self.selected_collection.borrow() {
+            Some(ref t) => t.upgrade().unwrap().tasks(),
+            None => return,
+        };
+
+        let mut selected_task = None;
+        tasks.retain(|task| {
+            let task = task.downcast_ref::<TaskObject>().unwrap();
+
+            if task.get_id() == id {
+                selected_task = Some(task.clone());
+            }
+
+            task.get_id() != id
+        });
+
+        if let Some(task) = selected_task {
+            self.toast.add_toast(
+                Toast::builder()
+                    .title(&format!("Task Deleted: {}", task.task_name()))
+                    .timeout(2)
+                    .build(),
+            );
+        }
     }
 
     fn show_add_new_collection_dialog(&self) {
