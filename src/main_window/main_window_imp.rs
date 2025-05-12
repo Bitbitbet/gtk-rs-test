@@ -1,10 +1,10 @@
 use std::cell::{OnceCell, RefCell};
 
 use gtk::{
-    CompositeTemplate, CustomFilter, Entry, EntryIconPosition, FilterListModel, Image, ListBox,
+    CompositeTemplate, CustomFilter, Entry, EntryIconPosition, FilterListModel, ListBox,
     ListBoxRow, ListItem, NoSelection, Stack, TemplateChild, Widget,
     gio::ListStore,
-    glib::{self, Properties, WeakRef, subclass::InitializingObject},
+    glib::{self, Properties, WeakRef, clone::Downgrade, subclass::InitializingObject},
     subclass::{
         widget::{CompositeTemplateClass, CompositeTemplateInitializingExt, WidgetImpl},
         window::WindowImpl,
@@ -12,19 +12,20 @@ use gtk::{
 };
 
 use adw::{
-    AboutDialog, ActionRow, ApplicationWindow, Banner, NavigationSplitView, Toast, ToastOverlay,
-    prelude::*,
+    AboutDialog, ApplicationWindow, Banner, NavigationSplitView, Toast, ToastOverlay, prelude::*,
 };
 
 use adw::subclass::prelude::*;
 use gtk_rs_test::watcher::Watcher;
 
 use crate::{
-    collection_object::CollectionObject,
+    collection_object::{self, CollectionObject},
     task_object::{self, TaskObject},
 };
 
-use super::{collection_wizard::CollectionWizard, task_row::TaskRow};
+use super::{
+    collection_row::CollectionRow, collection_wizard::CollectionWizard, task_row::TaskRow,
+};
 
 #[derive(PartialEq, Default)]
 pub enum FilterMode {
@@ -76,6 +77,9 @@ pub struct MainWindowImp {
 
     #[property(get, set)]
     filter_mode: RefCell<String>,
+
+    #[property(get, set)]
+    task_page_title: RefCell<String>,
 
     selected_collection: RefCell<Watcher<'static, Option<WeakRef<CollectionObject>>>>,
     collections: ListStore,
@@ -168,7 +172,17 @@ impl MainWindowImp {
                 .build(),
         );
     }
+    fn show_add_new_collection_dialog(&self) {
+        CollectionWizard::new().present(Some(&*self.obj()));
+    }
 
+    pub(super) fn remove_collection_by_id(&self, id: collection_object::IdType) {
+        self.collections.retain(|c| {
+            let c = c.downcast_ref::<CollectionObject>().unwrap();
+
+            c.get_id() != id
+        });
+    }
     pub(super) fn remove_done_tasks(&self) {
         let tasks = match &**self.selected_collection.borrow() {
             Some(t) => t.upgrade().unwrap().tasks(),
@@ -218,11 +232,6 @@ impl MainWindowImp {
             );
         }
     }
-
-    fn show_add_new_collection_dialog(&self) {
-        CollectionWizard::new().present(Some(&*self.obj()));
-    }
-
     pub(super) fn add_collection(&self, title: &str) {
         let new_collection = CollectionObject::new(title);
         self.collections.append(&new_collection);
@@ -236,15 +245,26 @@ impl MainWindowImp {
                 .unwrap(),
         ));
 
-        self.stack.set_visible_child_name("main");
         self.set_focus_child(Some(self.task_entry.upcast_ref()));
     }
+    pub(super) fn select_collection(&self, id: collection_object::IdType) {
+        let (index, collection_object) = match self
+            .collections
+            .iter::<CollectionObject>()
+            .map(|c| c.unwrap())
+            .enumerate()
+            .find(|(_, c)| c.get_id() == id)
+        {
+            Some(p) => p,
+            None => return,
+        };
 
-    fn set_currently_displayed_model(&self, model: ListStore) {
-        self.task_model.set_model(Some(&FilterListModel::new(
-            Some(model),
-            Some(self.task_filter.get().unwrap().clone()),
-        )));
+        let list_box_row = self.collection_list_box.row_at_index(index as i32);
+        self.collection_list_box.select_row(list_box_row.as_ref());
+
+        *self.selected_collection.borrow_mut().borrow_mut() =
+            Some(Downgrade::downgrade(&collection_object));
+        self.split_view.set_show_content(true);
     }
 }
 
@@ -253,13 +273,14 @@ impl Default for MainWindowImp {
         Self {
             task_model: Default::default(),
             toast: Default::default(),
-            filter_mode: Default::default(),
+            filter_mode: RefCell::new(String::from("all")),
             banner: Default::default(),
             task_entry: Default::default(),
             stack: Default::default(),
             collection_list_box: Default::default(),
             selected_collection: Default::default(),
             split_view: Default::default(),
+            task_page_title: RefCell::new(String::from("Tasks")),
 
             task_filter: Default::default(),
             collections: ListStore::new::<CollectionObject>(),
@@ -314,6 +335,7 @@ impl ObjectImpl for MainWindowImp {
             });
         }
 
+        // Configure widget building for ListBox of collections
         self.collection_list_box
             .bind_model(Some(&self.collections), |collection_object| {
                 let collection_object = collection_object
@@ -321,29 +343,42 @@ impl ObjectImpl for MainWindowImp {
                     .unwrap()
                     .clone();
 
-                let row = ActionRow::builder()
-                    .title(collection_object.title())
-                    .activatable(true)
-                    .build();
-                row.add_suffix(&Image::builder().icon_name("right-smaller-symbolic").build());
-
-                row.upcast::<Widget>()
+                CollectionRow::new(&collection_object).upcast::<Widget>()
             });
 
+        // Watch the selected collection for changes
         {
             let window = self.downgrade();
             self.selected_collection
                 .borrow_mut()
                 .watch(move |collection_object| {
                     let window = window.upgrade().unwrap();
-                    let collection_object = if let Some(c) = collection_object {
-                        c.upgrade().unwrap()
+                    if let Some(c) = collection_object {
+                        let c = c.upgrade().unwrap();
+                        window.task_model.set_model(Some(&FilterListModel::new(
+                            Some(c.tasks()),
+                            Some(window.task_filter.get().unwrap().clone()),
+                        )));
+                        window
+                            .obj()
+                            .set_task_page_title(format!("Tasks of {}", c.title()));
                     } else {
-                        return;
-                    };
-                    window.set_currently_displayed_model(collection_object.tasks());
+                        window.task_model.set_model(None::<&FilterListModel>);
+                        window.obj().set_task_page_title("Tasks");
+                    }
                 });
         }
+
+        let stack = self.stack.clone();
+        // Handle the outer stack page switching
+        self.collections
+            .connect_items_changed(move |collections, _, _, _| {
+                stack.set_visible_child_name(if collections.n_items() == 0 {
+                    "placeholder"
+                } else {
+                    "main"
+                })
+            });
     }
 }
 impl WidgetImpl for MainWindowImp {}

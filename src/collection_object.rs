@@ -1,17 +1,24 @@
+use adw::subclass::prelude::ObjectSubclassIsExt;
 use gtk::glib::{self, Object};
 
 glib::wrapper! {
     pub struct CollectionObject(ObjectSubclass<imp::CollectionObjectImp>);
 }
 
+pub type IdType = u64;
+
 impl CollectionObject {
     pub fn new(title: &str) -> Self {
         Object::builder().property("title", title).build()
     }
+
+    pub fn get_id(&self) -> IdType {
+        self.imp().id
+    }
 }
 
 mod imp {
-    use std::cell::RefCell;
+    use std::{cell::RefCell, sync::Mutex};
 
     use gtk::{
         gio::ListStore,
@@ -23,6 +30,8 @@ mod imp {
 
     use crate::task_object::TaskObject;
 
+    use super::IdType;
+
     #[derive(Properties)]
     #[properties[wrapper_type=super::CollectionObject]]
     pub struct CollectionObjectImp {
@@ -30,14 +39,22 @@ mod imp {
         title: RefCell<String>,
         #[property(get)]
         tasks: ListStore,
+
+        pub(super) id: IdType,
     }
 
     impl Default for CollectionObjectImp {
         fn default() -> Self {
-            Self {
+            static ID: Mutex<IdType> = Mutex::new(0);
+            let mut id = ID.lock().unwrap();
+            let self_ = Self {
                 title: Default::default(),
                 tasks: ListStore::new::<TaskObject>(),
-            }
+                id: *id,
+            };
+            *id += 1;
+
+            self_
         }
     }
 

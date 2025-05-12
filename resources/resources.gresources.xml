@@ -3,8 +3,9 @@
 	<gresource prefix="/me/gtk-rs-test/test">
 		<file compressed="true" preprocess="xml-stripblanks">main_window.ui</file>
 		<file compressed="true" preprocess="xml-stripblanks">task_row.ui</file>
+		<file compressed="true" preprocess="xml-stripblanks">collection_row.ui</file>
 		<file compressed="true" preprocess="xml-stripblanks">collection_wizard.ui</file>
 		<file preprocess="xml-stripblanks">icons/check-round-outline2-symbolic.svg</file>
-		<file preprocess="xml-stripblanks">icons/right-smaller-symbolic.svg</file>
+		<file preprocess="xml-stripblanks">icons/right-small-symbolic.svg</file>
 	</gresource>
 </gresources>

@@ -6,7 +6,7 @@ use gtk::{Widget, Window, glib};
 
 use gtk::gio::{self, ActionEntry};
 
-use crate::task_object;
+use crate::{collection_object, task_object};
 
 glib::wrapper! {
     pub struct MainWindow(ObjectSubclass<main_window_imp::MainWindowImp>)
@@ -35,8 +35,8 @@ impl MainWindow {
                 .build(),
             ActionEntry::builder("add-collection")
                 .parameter_type(Some(&String::static_variant_type()))
-                .activate(|window: &Self, _, param| {
-                    let title = param.and_then(|v| v.get::<String>()).unwrap();
+                .activate(|window: &Self, _, title| {
+                    let title = title.and_then(|v| v.get::<String>()).unwrap();
 
                     window.imp().add_collection(&title);
                 })
@@ -46,6 +46,24 @@ impl MainWindow {
                 .activate(|window: &Self, _, id| {
                     let id = id.and_then(|t| t.get::<task_object::IdType>()).unwrap();
                     window.imp().remove_task_by_id(id);
+                })
+                .build(),
+            ActionEntry::builder("select-collection")
+                .parameter_type(Some(&collection_object::IdType::static_variant_type()))
+                .activate(|window: &Self, _, id| {
+                    let id = id
+                        .and_then(|t| t.get::<collection_object::IdType>())
+                        .unwrap();
+                    window.imp().select_collection(id);
+                })
+                .build(),
+            ActionEntry::builder("remove-collection")
+                .parameter_type(Some(&collection_object::IdType::static_variant_type()))
+                .activate(|window: &Self, _, id| {
+                    let id = id
+                        .and_then(|t| t.get::<collection_object::IdType>())
+                        .unwrap();
+                    window.imp().remove_collection_by_id(id);
                 })
                 .build(),
         ]);
@@ -84,5 +102,6 @@ mod builder {
     }
 }
 
+mod collection_row;
 mod collection_wizard;
 mod task_row;

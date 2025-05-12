@@ -37,7 +37,6 @@
 	</menu>
 	<template class="GtkRsTestMainWindow" parent="AdwApplicationWindow">
 		<property name="title">To-Do List</property>
-		<property name="filter-mode">all</property>
 		<child>
 			<object class="AdwBreakpoint">
 				<condition>max-width: 500sp</condition>
@@ -58,8 +57,8 @@
 								<property name="content">
 									<object class="AdwStatusPage">
 										<property name="icon-name">check-round-outline2-symbolic</property>
-										<property name="title">No Tasks</property>
-										<property name="description">Create some tasks now!</property>
+										<property name="title">No Collections</property>
+										<property name="description">Create a collection, and fill it with tasks now!</property>
 										<child>
 											<object class="GtkButton">
 												<property name="label">New Collection</property>
@@ -120,7 +119,7 @@
 								</property>
 								<property name="content">
 									<object class="AdwNavigationPage">
-										<property name="title">Tasks</property>
+										<property name="title" bind-source="GtkRsTestMainWindow" bind-property="task_page_title" bind-flags="sync-create"/>
 										<child>
 											<object class="AdwToolbarView">
 												<child type="top">
