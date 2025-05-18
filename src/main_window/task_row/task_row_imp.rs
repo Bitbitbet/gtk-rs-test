@@ -90,6 +90,8 @@ impl TaskRowImp {
 
     fn update_menu_item(self: &Self, task_object: &TaskObject) {
         self.rightclick_menu_model.remove_all();
+        self.rightclick_menu_model
+            .append(Some("Copy"), Some("row.copy"));
         self.delete_menu_item.set_action_and_target_value(
             Some("win.remove-task"),
             Some(&task_object.get_id().to_variant()),
@@ -108,6 +110,18 @@ impl TaskRowImp {
         } else {
             name.to_string()
         }
+    }
+
+    pub(super) fn copy(&self) {
+        let content = self.obj().title();
+        self.obj().clipboard().set(&content);
+
+        self.obj()
+            .activate_action(
+                "win.toast",
+                Some(&format!("Saved to clipboard: {}", content).to_variant()),
+            )
+            .unwrap();
     }
 }
 
@@ -150,6 +164,8 @@ impl ObjectImpl for TaskRowImp {
             });
         }
         self.obj().add_controller(gesture_click);
+
+        self.obj().setup_actions();
     }
     fn dispose(&self) {
         self.rightclick_menu.unparent();

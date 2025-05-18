@@ -1,4 +1,9 @@
-use gtk::glib::{self, Object, subclass::prelude::*};
+use adw::subclass::prelude::*;
+use gtk::{
+    gio::{ActionEntry, SimpleActionGroup, prelude::ActionMapExtManual},
+    glib::{self, Object, clone::Downgrade},
+    prelude::WidgetExt,
+};
 
 use crate::task_object::TaskObject;
 
@@ -11,6 +16,18 @@ glib::wrapper! {
 impl TaskRow {
     pub fn new() -> Self {
         Object::builder().build()
+    }
+
+    fn setup_actions(&self) {
+        let group = SimpleActionGroup::new();
+        self.insert_action_group("row", Some(&group));
+
+        let self0 = self.downgrade();
+        group.add_action_entries([ActionEntry::builder("copy")
+            .activate(move |_, _, _| {
+                self0.upgrade().unwrap().imp().copy();
+            })
+            .build()]);
     }
 
     pub(super) fn bind(&self, task_object: &TaskObject) {

@@ -170,12 +170,7 @@ impl MainWindowImp {
         tasks.append(&TaskObject::new(name));
         self.task_entry.set_text("");
 
-        self.toast.add_toast(
-            Toast::builder()
-                .title(&format!("Task Added: {name}"))
-                .timeout(2)
-                .build(),
-        );
+        self.show_toast(&format!("Task Added: {name}"), None);
     }
     fn show_add_new_collection_dialog(&self) {
         CollectionWizard::new().present(Some(&*self.obj()));
@@ -219,12 +214,7 @@ impl MainWindowImp {
         };
 
         tasks.retain(|task_object| !task_object.downcast_ref::<TaskObject>().unwrap().checked());
-        self.toast.add_toast(
-            Toast::builder()
-                .title("Removed all done tasks")
-                .timeout(1)
-                .build(),
-        );
+        self.show_toast("Removed all done tasks", None);
     }
     pub(super) fn show_about_dialog(&self) {
         AboutDialog::builder()
@@ -253,12 +243,7 @@ impl MainWindowImp {
         });
 
         if let Some(task) = selected_task {
-            self.toast.add_toast(
-                Toast::builder()
-                    .title(&format!("Task Deleted: {}", task.name()))
-                    .timeout(2)
-                    .build(),
-            );
+            self.show_toast(&format!("Task Deleted: {}", task.name()), None);
         }
     }
     pub(super) fn add_collection(&self, title: &str) {
@@ -294,6 +279,14 @@ impl MainWindowImp {
         *self.selected_collection.borrow_mut().borrow_mut() =
             Some(Downgrade::downgrade(&collection_object));
         self.split_view.set_show_content(true);
+    }
+    pub(super) fn show_toast(&self, content: &str, timeout: Option<u32>) {
+        self.toast.add_toast(
+            Toast::builder()
+                .title(content)
+                .timeout(timeout.unwrap_or(2))
+                .build(),
+        );
     }
 }
 

@@ -71,6 +71,13 @@ impl MainWindow {
                     window.imp().remove_collection_by_id(id);
                 })
                 .build(),
+            ActionEntry::builder("toast")
+                .parameter_type(Some(&String::static_variant_type()))
+                .activate(|window: &Self, _, content| {
+                    let content = content.and_then(|t| t.get::<String>()).unwrap();
+                    window.imp().show_toast(&content, None);
+                })
+                .build(),
         ]);
         self.add_action(&PropertyAction::new("filter-mode", self, "filter_mode"));
         self.add_action(&PropertyAction::new(

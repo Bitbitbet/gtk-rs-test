@@ -39,6 +39,18 @@ impl CollectionRowImp {
         );
         self.rightclick_menu_model.append_item(&menu_item);
     }
+
+    pub(super) fn copy(&self) {
+        let content = self.obj().title();
+        self.obj().clipboard().set(&content);
+
+        self.obj()
+            .activate_action(
+                "win.toast",
+                Some(&format!("Saved to clipboard: {}", content).to_variant()),
+            )
+            .unwrap();
+    }
 }
 
 #[glib::object_subclass]
@@ -60,6 +72,7 @@ impl ObjectImpl for CollectionRowImp {
     fn constructed(&self) {
         self.parent_constructed();
 
+        // Prepare right click behavior
         self.rightclick_menu.set_parent(&*self.obj());
 
         let gesture_click = GestureClick::builder().button(BUTTON_SECONDARY).build();
@@ -71,6 +84,10 @@ impl ObjectImpl for CollectionRowImp {
             });
         }
         self.obj().add_controller(gesture_click);
+
+        self.obj().setup_actions();
+        self.rightclick_menu_model
+            .append(Some("Copy"), Some("row.copy"));
     }
     fn dispose(&self) {
         self.rightclick_menu.unparent();
