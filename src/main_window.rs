@@ -28,6 +28,11 @@ impl MainWindow {
                     window.imp().show_about_dialog();
                 })
                 .build(),
+            ActionEntry::builder("save")
+                .activate(|window: &Self, _, _| {
+                    window.imp().save();
+                })
+                .build(),
             ActionEntry::builder("remove-done-tasks")
                 .activate(|window: &Self, _, _| {
                     window.imp().remove_done_tasks();

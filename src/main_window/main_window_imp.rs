@@ -1,4 +1,9 @@
-use std::cell::{OnceCell, RefCell};
+use std::{
+    cell::{OnceCell, RefCell},
+    error::Error,
+    fs,
+    io::Write,
+};
 
 use gtk::{
     CompositeTemplate, CustomFilter, Entry, EntryIconPosition, FilterListModel, ListBox,
@@ -16,10 +21,11 @@ use adw::{
 };
 
 use adw::subclass::prelude::*;
-use gtk_rs_test::watcher::Watcher;
+use gtk_rs_test::{list_store_ser::ListStoreSer, watcher::Watcher};
 
 use crate::{
     collection_object::{self, CollectionObject},
+    data_path,
     task_object::{self, TaskObject},
 };
 
@@ -74,7 +80,6 @@ pub struct MainWindowImp {
     collection_list_box: TemplateChild<ListBox>,
     #[template_child]
     split_view: TemplateChild<NavigationSplitView>,
-
     #[property(get, set)]
     filter_mode: RefCell<String>,
 
@@ -157,23 +162,47 @@ impl MainWindowImp {
             None => return,
         };
 
-        let task_name = self.task_entry.text();
-        let task_name = task_name.trim();
-        if task_name.len() == 0 {
+        let name = self.task_entry.text();
+        let name = name.trim();
+        if name.len() == 0 {
             return;
         }
-        tasks.append(&TaskObject::new(task_name));
+        tasks.append(&TaskObject::new(name));
         self.task_entry.set_text("");
 
         self.toast.add_toast(
             Toast::builder()
-                .title(&format!("Task Added: {task_name}"))
+                .title(&format!("Task Added: {name}"))
                 .timeout(2)
                 .build(),
         );
     }
     fn show_add_new_collection_dialog(&self) {
         CollectionWizard::new().present(Some(&*self.obj()));
+    }
+
+    /// Save state to filesystem
+    pub(super) fn save(&self) {
+        let mut path = data_path();
+
+        let result = (|| -> Result<(), Box<dyn Error>> {
+            fs::create_dir_all(&path)?;
+            path.push("collections.json");
+            let v = serde_json::to_vec(&ListStoreSer::<CollectionObject>::new(
+                self.collections.clone(),
+            ))?;
+
+            fs::OpenOptions::new()
+                .write(true)
+                .truncate(true)
+                .open(path)?
+                .write_all(v.as_slice())?;
+
+            Ok(())
+        })();
+        if let Err(err) = result {
+            eprintln!("Error occurred trying to save collections: {err}")
+        }
     }
 
     pub(super) fn remove_collection_by_id(&self, id: collection_object::IdType) {
@@ -226,7 +255,7 @@ impl MainWindowImp {
         if let Some(task) = selected_task {
             self.toast.add_toast(
                 Toast::builder()
-                    .title(&format!("Task Deleted: {}", task.task_name()))
+                    .title(&format!("Task Deleted: {}", task.name()))
                     .timeout(2)
                     .build(),
             );
@@ -369,8 +398,8 @@ impl ObjectImpl for MainWindowImp {
                 });
         }
 
-        let stack = self.stack.clone();
         // Handle the outer stack page switching
+        let stack = self.stack.clone();
         self.collections
             .connect_items_changed(move |collections, _, _, _| {
                 stack.set_visible_child_name(if collections.n_items() == 0 {
@@ -379,6 +408,36 @@ impl ObjectImpl for MainWindowImp {
                     "main"
                 })
             });
+
+        // Restore state from filesystem
+        let mut path = data_path();
+
+        let result = (|| -> Result<(), Box<dyn Error>> {
+            fs::create_dir_all(&path)?;
+            path.push("collections.json");
+
+            let file = fs::OpenOptions::new()
+                .read(true)
+                .write(true)
+                .create(true)
+                .open(path)?;
+            let v: ListStoreSer<CollectionObject> = serde_json::from_reader(&file)?;
+
+            for c in v.extract().iter::<CollectionObject>().map(Result::unwrap) {
+                self.collections.append(&c);
+            }
+
+            Ok(())
+        })();
+        if let Err(err) = result {
+            eprintln!("Error occurred trying to load collections: {err}")
+        }
+
+        self.obj().connect_close_request(|w| {
+            WidgetExt::activate_action(w, "win.save", None).unwrap();
+
+            return glib::Propagation::Proceed;
+        });
     }
 }
 impl WidgetImpl for MainWindowImp {}

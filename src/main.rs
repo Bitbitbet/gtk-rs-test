@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use adw::prelude::*;
 use gtk::gio;
 use gtk::glib;
@@ -9,6 +11,14 @@ mod collection_object;
 mod task_object;
 
 mod main_window;
+
+fn data_path() -> PathBuf {
+    let mut p = glib::user_data_dir();
+
+    p.push(APP_ID);
+
+    p
+}
 
 fn main() -> glib::ExitCode {
     gio::resources_register_include!("compiled.gresource").expect("Failed to register gresources");

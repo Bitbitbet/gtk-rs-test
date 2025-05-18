@@ -34,7 +34,7 @@ pub struct TaskRowImp {
     #[property(get, set)]
     title: RefCell<String>,
 
-    task_name: RefCell<String>,
+    name: RefCell<String>,
     bindings: RefCell<Vec<Binding>>,
     delete_menu_item: MenuItem,
 }
@@ -46,7 +46,7 @@ impl Default for TaskRowImp {
             rightclick_menu: Default::default(),
             rightclick_menu_model: Default::default(),
             title: Default::default(),
-            task_name: Default::default(),
+            name: Default::default(),
             bindings: Default::default(),
             delete_menu_item: MenuItem::new(Some("Delete"), None),
         }
@@ -68,14 +68,14 @@ impl TaskRowImp {
         );
         bindings.push(
             task_object
-                .bind_property("task_name", &*self.obj(), "title")
-                .transform_to(|binding, task_name: &str| {
+                .bind_property("name", &*self.obj(), "title")
+                .transform_to(|binding, name: &str| {
                     let self_ = binding.target().and_downcast::<super::TaskRow>().unwrap();
                     let self_ = self_.imp();
 
-                    *self_.task_name.borrow_mut() = task_name.to_string();
+                    *self_.name.borrow_mut() = name.to_string();
 
-                    Some(self_.title(None, Some(task_name)))
+                    Some(self_.title(None, Some(name)))
                 })
                 .sync_create()
                 .build(),
@@ -98,15 +98,15 @@ impl TaskRowImp {
             .append_item(&self.delete_menu_item);
     }
 
-    fn title(&self, active: Option<bool>, task_name: Option<&str>) -> String {
+    fn title(&self, active: Option<bool>, name: Option<&str>) -> String {
         let active = active.unwrap_or(self.check_button.is_active());
-        let task_name_from_self = self.task_name.borrow();
-        let task_name = task_name.unwrap_or(&*task_name_from_self);
+        let name_from_self = self.name.borrow();
+        let name = name.unwrap_or(&*name_from_self);
 
         if active {
-            format!("<span strikethrough=\"true\">{}</span>", task_name)
+            format!("<span strikethrough=\"true\">{}</span>", name)
         } else {
-            task_name.to_string()
+            name.to_string()
         }
     }
 }

@@ -24,6 +24,10 @@
 			<attribute name="label" translatable="yes">Remove Done Tasks</attribute>
 			<attribute name="action">win.remove-done-tasks</attribute>
 		</item>
+		<item>
+			<attribute name="label" translatable="yes">Save</attribute>
+			<attribute name="action">win.save</attribute>
+		</item>
 		<section>
 			<item>
 				<attribute name="label" translatable="yes">Adaptive Preview</attribute>
