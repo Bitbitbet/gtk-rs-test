@@ -80,11 +80,6 @@ impl MainWindow {
                 .build(),
         ]);
         self.add_action(&PropertyAction::new("filter-mode", self, "filter_mode"));
-        self.add_action(&PropertyAction::new(
-            "adaptive-preview",
-            self,
-            "adaptive_preview",
-        ));
     }
 }
 
