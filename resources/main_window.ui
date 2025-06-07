@@ -54,7 +54,7 @@
 										</child>
 										<property name="content">
 											<object class="AdwStatusPage">
-												<property name="icon-name">check-round-outline2-symbolic</property>
+												<property name="icon-name">check-round-outline2</property>
 												<property name="title">No Collections</property>
 												<property name="description">Create a collection, and fill it with tasks now!</property>
 												<child>
@@ -89,7 +89,7 @@
 															<object class="AdwHeaderBar">
 																<child type="start">
 																	<object class="GtkButton">
-																		<property name="icon-name">list-add-symbolic</property>
+																		<property name="icon-name">list-add</property>
 																		<property name="tooltip-text">New Collection</property>
 																		<signal name="clicked" handler="handle_new_collection_button_clicked" swapped="true"/>
 																	</object>
@@ -125,7 +125,7 @@
 																<property name="show_back_button">true</property>
 																<child type="end">
 																	<object class="GtkMenuButton">
-																		<property name="icon-name">open-menu-symbolic</property>
+																		<property name="icon-name">open-menu</property>
 																		<property name="menu-model">headerbar_menu</property>
 																	</object>
 																</child>
@@ -147,7 +147,7 @@
 																</child>
 																<child>
 																	<object class="GtkEntry" id="task_entry">
-																		<property name="secondary_icon_name">list-add-symbolic</property>
+																		<property name="secondary_icon_name">list-add</property>
 																		<property name="placeholder_text">Enter your task names...</property>
 																		<signal name="icon-release" handler="handle_task_add_clicked" swapped="true"/>
 																		<signal name="activate" handler="handle_task_entry_activated" swapped="true"/>

@@ -16,6 +16,10 @@ glib::wrapper! {
 
 mod main_window_imp;
 
+mod collection_row;
+mod collection_wizard;
+mod task_row;
+
 impl MainWindow {
     pub fn builder<'a>() -> MainWindowBuilder<'a> {
         MainWindowBuilder::new()
@@ -108,7 +112,3 @@ mod builder {
         }
     }
 }
-
-mod collection_row;
-mod collection_wizard;
-mod task_row;

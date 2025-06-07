@@ -32,15 +32,15 @@ impl<'a, 'w, T> BorrowMut<T> for WatcherGuard<'a, 'w, T> {
 
 impl<'a, 'w, T> Drop for WatcherGuard<'a, 'w, T> {
     fn drop(&mut self) {
-        for f in self.watcher.callbacks.iter() {
-            f(self.watcher);
+        for f in self.watcher.callbacks.iter_mut() {
+            f(&self.watcher.value);
         }
     }
 }
 
 pub struct Watcher<'w, T> {
     value: T,
-    callbacks: Vec<Box<dyn Fn(&T) + 'w>>,
+    callbacks: Vec<Box<dyn FnMut(&T) + 'w>>,
 }
 
 impl<'w, T> Watcher<'w, T> {
@@ -51,7 +51,7 @@ impl<'w, T> Watcher<'w, T> {
         }
     }
 
-    pub fn watch(&mut self, f: impl Fn(&T) + 'w) {
+    pub fn watch(&mut self, f: impl FnMut(&T) + 'w) {
         self.callbacks.push(Box::new(f));
     }
 
