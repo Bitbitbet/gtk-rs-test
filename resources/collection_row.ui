@@ -2,7 +2,6 @@
 <interface>
     <!-- Menu of the right-click popup for taskrow -->
     <menu id="rightclick_menu_model" />
-
     <template class="GtkRsTestCollectionRow" parent="AdwActionRow">
         <property name="activatable">true</property>
         <object class="GtkPopoverMenu" id="rightclick_menu">
@@ -11,10 +10,9 @@
             <property name="position">bottom</property>
             <property name="halign">start</property>
         </object>
-
         <child type="suffix">
             <object class="GtkButton" id="suffix_button">
-                <property name="icon_name">right-small-symbolic</property>
+                <property name="icon_name">right-small</property>
                 <property name="has_frame">false</property>
                 <property name="action_name">win.select-collection</property>
                 <style>
@@ -22,6 +20,5 @@
                 </style>
             </object>
         </child>
-
     </template>
 </interface>

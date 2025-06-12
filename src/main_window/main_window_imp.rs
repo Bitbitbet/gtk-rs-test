@@ -9,7 +9,7 @@ use gtk::{
     CompositeTemplate, CustomFilter, Entry, EntryIconPosition, FilterListModel, ListBox,
     ListBoxRow, ListItem, NoSelection, Stack, TemplateChild, Widget,
     gio::ListStore,
-    glib::{self, Properties, WeakRef, clone::Downgrade, subclass::InitializingObject},
+    glib::{self, Properties, subclass::InitializingObject},
     subclass::{
         widget::{CompositeTemplateClass, CompositeTemplateInitializingExt, WidgetImpl},
         window::WindowImpl,
@@ -86,7 +86,7 @@ pub struct MainWindowImp {
     #[property(get, set)]
     task_page_title: RefCell<String>,
 
-    selected_collection: RefCell<Watcher<'static, Option<WeakRef<CollectionObject>>>>,
+    selected_collection: RefCell<Watcher<'static, Option<CollectionObject>>>,
     collections: ListStore,
     task_filter: OnceCell<CustomFilter>,
 }
@@ -128,13 +128,10 @@ impl MainWindowImp {
     #[template_callback]
     fn handle_collection_row_selected(&self, list_box_row: Option<&ListBoxRow>) {
         *self.selected_collection.borrow_mut().borrow_mut() = list_box_row.map(|list_box_row| {
-            ObjectExt::downgrade(
-                &self
-                    .collections
-                    .item(list_box_row.index().try_into().unwrap())
-                    .and_downcast::<CollectionObject>()
-                    .unwrap(),
-            )
+            self.collections
+                .item(list_box_row.index().try_into().unwrap())
+                .and_downcast::<CollectionObject>()
+                .unwrap()
         });
     }
     #[template_callback]
@@ -158,7 +155,7 @@ impl MainWindowImp {
 
     fn add_new_task(&self) {
         let tasks = match &**self.selected_collection.borrow() {
-            Some(t) => t.upgrade().unwrap().tasks(),
+            Some(t) => t.tasks(),
             None => return,
         };
 
@@ -209,7 +206,7 @@ impl MainWindowImp {
     }
     pub(super) fn remove_done_tasks(&self) {
         let tasks = match &**self.selected_collection.borrow() {
-            Some(t) => t.upgrade().unwrap().tasks(),
+            Some(t) => t.tasks(),
             None => return,
         };
 
@@ -227,7 +224,7 @@ impl MainWindowImp {
     }
     pub(super) fn remove_task_by_id(&self, id: task_object::IdType) {
         let tasks = match **self.selected_collection.borrow() {
-            Some(ref t) => t.upgrade().unwrap().tasks(),
+            Some(ref t) => t.tasks(),
             None => return,
         };
 
@@ -249,8 +246,7 @@ impl MainWindowImp {
     pub(super) fn add_collection(&self, title: &str) {
         let new_collection = CollectionObject::new(title);
         self.collections.append(&new_collection);
-        *self.selected_collection.borrow_mut().borrow_mut() =
-            Some(ObjectExt::downgrade(&new_collection));
+        *self.selected_collection.borrow_mut().borrow_mut() = Some(new_collection);
 
         self.collection_list_box.select_row(Some(
             &self
@@ -276,8 +272,7 @@ impl MainWindowImp {
         let list_box_row = self.collection_list_box.row_at_index(index as i32);
         self.collection_list_box.select_row(list_box_row.as_ref());
 
-        *self.selected_collection.borrow_mut().borrow_mut() =
-            Some(Downgrade::downgrade(&collection_object));
+        *self.selected_collection.borrow_mut().borrow_mut() = Some(collection_object);
         self.split_view.set_show_content(true);
     }
     pub(super) fn show_toast(&self, content: &str, timeout: Option<u32>) {
@@ -332,7 +327,7 @@ impl ObjectImpl for MainWindowImp {
         self.parent_constructed();
 
         self.obj().setup_actions();
-        // Initialize the fiter
+        // Initialize the filter
         let filter = self.task_filter.get_or_init(|| {
             let window = self.downgrade();
             CustomFilter::new(move |task_object| {
@@ -376,7 +371,6 @@ impl ObjectImpl for MainWindowImp {
                 .watch(move |collection_object| {
                     let window = window.upgrade().unwrap();
                     if let Some(c) = collection_object {
-                        let c = c.upgrade().unwrap();
                         window.task_model.set_model(Some(&FilterListModel::new(
                             Some(c.tasks()),
                             Some(window.task_filter.get().unwrap().clone()),
@@ -426,6 +420,7 @@ impl ObjectImpl for MainWindowImp {
             eprintln!("Error occurred trying to load collections: {err}")
         }
 
+        // Store state to filesystem before exiting
         self.obj().connect_close_request(|w| {
             WidgetExt::activate_action(w, "win.save", None).unwrap();
 
